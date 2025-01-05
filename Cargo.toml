@@ -15,33 +15,33 @@ readme = "README.md"
 [dependencies]
 steamid-ng = "1.0.0"
 steam-machine-id = "0.1.0"
-reqwest = { version = "0.11.22", features = ["stream", "multipart", "json", "cookies"]  }
+reqwest = { version = "0.12.12", features = ["stream", "multipart", "json", "cookies", "socks"] }
 url = "2.4.1"
 tokio = { version = "1", features = ["rt"] }
 serde = { version = "1.0", features = ["derive", "rc"] }
 serde_json = { version = "1.0", features = ["raw_value"] }
-serde_qs = "0.12.0"
+serde_qs = "0.13.0"
 chrono = { version = "^0.4.27", features = ["serde"] }
-thiserror = "1.0.30"
+thiserror = "2.0.9"
 log = "0.4.0"
 protobuf = "=3.4.0"
 protobuf-json-mapping = "3.3.0"
 steam-session-proto = { version = "0.1.0", path = "./protobuf" }
-base64 = "^0.21"
+base64 = "^0.22"
 lazy-regex = "3.1.0"
 lazy_static = "1.4.0"
 sha-1 = "^0.10"
 sha2 = "0.10.8"
 hmac = "0.12.1"
 async-std = "1.12.0"
-tokio-tungstenite = { version = "0.20.1", features = ["native-tls"] }
+tokio-tungstenite = { version = "0.26.1", features = ["native-tls"] }
 rand = "0.8.5"
 bytes = "1.5.0"
 byteorder = "1.5.0"
 http = "1.0.0"
 keyvalues-serde = "0.2.0"
 num_enum = "0.7.1"
-dashmap = "5.5.3"
+dashmap = "6.1.0"
 flate2 = "1.0"
 rsa = "0.9.6"
 cookie = "0.18.0"
@@ -52,6 +52,6 @@ async-trait = "0.1.75"
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 dotenv = "0.15.0"
-another-steam-totp = "0.2.0"
+another-steam-totp = "0.3.5"
 simple-logging = "2.0.2"
-scraper = "0.14.0"
+scraper = "0.22.0"

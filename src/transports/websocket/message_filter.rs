@@ -56,7 +56,7 @@ impl MessageFilter {
                         tungstenite::Message::Binary(buffer) => {
                             log::debug!("Got {} bytes", buffer.len());
                             
-                            if let Err(error) = handle_ws_message(&filter_send, buffer) {
+                            if let Err(error) = handle_ws_message(&filter_send, buffer.to_vec()) {
                                 log::warn!("Error handling websocket message: {}", error);
                             }
                         },
