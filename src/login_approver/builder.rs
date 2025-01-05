@@ -21,6 +21,7 @@ pub struct LoginApproverBuilder {
     pub platform_type: EAuthTokenPlatformType,
     pub machine_id: Option<Vec<u8>>,
     pub user_agent: &'static str,
+    pub client: reqwest::Client,
 }
 
 impl LoginApproverBuilder {
@@ -35,6 +36,7 @@ impl LoginApproverBuilder {
             platform_type: EAuthTokenPlatformType::k_EAuthTokenPlatformType_WebBrowser,
             machine_id: None,
             user_agent: DEFAULT_USER_AGENT,
+            client: Default::default(),
         }
     }
     

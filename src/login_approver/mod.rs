@@ -126,13 +126,12 @@ impl TryFrom<LoginApproverBuilder> for LoginApprover {
     type Error = Error;
     
     fn try_from(builder: LoginApproverBuilder) -> Result<Self, Self::Error> {
-        let client = Client::new();
         let transport = WebApiTransport::new();
         let handler = AuthenticationClient::new(AuthenticationClientConstructorOptions {
             machine_id: builder.machine_id,
             platform_type: builder.platform_type,
             transport,
-            client,
+            client: builder.client,
             user_agent: builder.user_agent,
         });
         let decoded_access_token = JwtPayload::from_str(&builder.access_token)?;
