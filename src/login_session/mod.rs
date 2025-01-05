@@ -69,6 +69,18 @@ pub async fn connect_webapi() -> Result<LoginSession<WebApiTransport>, LoginSess
         .build()
 }
 
+pub async fn connect_webapi_with_proxy(proxy_url: &str) -> Result<LoginSession<WebApiTransport>, LoginSessionError> {
+    let proxy = crate::helpers::Socks5Proxy::from_str(proxy_url)?;
+    let proxy_client = proxy.to_reqwest()?;
+
+    let platform_type = EAuthTokenPlatformType::k_EAuthTokenPlatformType_WebBrowser;
+    let transport = WebApiTransport::with_custom_client(proxy_client.clone());
+
+    LoginSessionBuilder::new(transport, platform_type)
+        .client(proxy_client)
+        .build()
+}
+
 impl<T> LoginSession<T>
 where
     T: Transport,
@@ -86,10 +98,9 @@ where
         options: LoginSessionOptions<T>,
     ) -> Result<Self, LoginSessionError> {
         let platform_type = options.platform_type;
-        let client = Client::new();
         let handler = helpers::create_handler(
             options.transport,
-            client.clone(),
+            options.client.clone(),
             platform_type,
             options.machine_id,
             options.user_agent
@@ -102,7 +113,7 @@ where
             access_token: None,
             access_token_set_at: None,
             platform_type,
-            client,
+            client: options.client,
             handler,
             steam_guard_code: None,
             steam_guard_machine_token: None,

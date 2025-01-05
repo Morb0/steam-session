@@ -13,7 +13,7 @@ const HOSTNAME: &str = "api.steampowered.com";
 
 /// Web API transport.
 #[derive(Debug, Default)]
-pub struct WebApiTransport {}
+pub struct WebApiTransport(reqwest::Client);
 
 #[async_trait]
 impl Transport for WebApiTransport {
@@ -28,8 +28,10 @@ impl Transport for WebApiTransport {
     {
         let (tx, rx) = oneshot::channel();
         
+        let client = self.0.clone();
         tokio::spawn(async move {
-            let result = helpers::get_response(msg, access_token).await
+            let result = helpers::get_response(&client, msg, access_token)
+                .await
                 .map_err(AuthenticationClientError::WebAPI);
             
             tx.send(result)
@@ -44,7 +46,11 @@ impl WebApiTransport {
     pub fn new() -> Self {
         Self::default()
     }
-    
+
+    pub fn with_custom_client(client: reqwest::Client) -> Self {
+        Self(client)
+    }
+
     /// Gets the URL.
     fn get_url(pathname: &str) -> String {
         format!("https://{HOSTNAME}/{pathname}")

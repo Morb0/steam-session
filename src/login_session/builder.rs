@@ -6,6 +6,7 @@ use steam_session_proto::steammessages_auth_steamclient::EAuthTokenPlatformType;
 pub struct LoginSessionBuilder<T> {
     platform_type: EAuthTokenPlatformType,
     transport: T,
+    client: reqwest::Client,
     user_agent: Option<&'static str>,
     machine_id: Option<Vec<u8>>,
 }
@@ -21,6 +22,7 @@ where
         Self {
             platform_type,
             transport,
+            client: Default::default(),
             user_agent: None,
             machine_id: None,
         }
@@ -40,10 +42,16 @@ where
         self.machine_id = Some(machine_id);
         self
     }
+
+    pub fn client(mut self, client: reqwest::Client) -> Self {
+        self.client = client;
+        self
+    }
     
     pub fn build(self) -> Result<LoginSession<T>, LoginSessionError> {
         let session = LoginSession::new(LoginSessionOptions {
             transport: self.transport,
+            client: self.client,
             platform_type: self.platform_type,
             user_agent: self.user_agent,
             machine_id: self.machine_id,

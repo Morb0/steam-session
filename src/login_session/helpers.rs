@@ -3,11 +3,11 @@ use crate::authentication_client::{AuthenticationClient, AuthenticationClientCon
 use crate::helpers::DEFAULT_USER_AGENT;
 use crate::transports::Transport;
 use crate::enums::EAuthTokenPlatformType;
-use reqwest::Client;
 
 #[derive(Debug)]
 pub struct LoginSessionOptions<T> {
     pub transport: T,
+    pub client: reqwest::Client,
     pub platform_type: EAuthTokenPlatformType,
     pub user_agent: Option<&'static str>,
     pub machine_id: Option<Vec<u8>>,
@@ -15,7 +15,7 @@ pub struct LoginSessionOptions<T> {
 
 pub fn create_handler<T>(
     transport: T,
-    client: Client,
+    client: reqwest::Client,
     platform_type: EAuthTokenPlatformType,
     machine_id: Option<Vec<u8>>,
     user_agent: Option<&'static str>,

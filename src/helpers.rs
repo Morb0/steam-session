@@ -1,21 +1,21 @@
 use std::str::FromStr;
 
-use base64::{Engine as _, engine::general_purpose};
-use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, InvalidHeaderValue};
-use serde_json::Value;
-use steamid_ng::SteamID;
-use serde::Deserialize;
-use sha1::{Sha1, Digest};
-use sha2::Sha256;
+use base64::{engine::general_purpose, Engine as _};
 use hmac::{Hmac, Mac};
+use reqwest::header::{HeaderMap, HeaderValue, InvalidHeaderValue, ACCEPT};
+use serde::Deserialize;
+use serde_json::Value;
+use sha1::{Digest, Sha1};
+use sha2::Sha256;
+use steamid_ng::SteamID;
 
 type HmacSha256 = Hmac<Sha256>;
 
 pub const DEFAULT_USER_AGENT: &str = "linux x86_64";
 
 const CHARS: [char; 26] = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y' ,'Z'
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S',
+    'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
 ];
 
 /// Represents a decode error.
@@ -68,7 +68,7 @@ pub struct JwtPayload {
 
 impl FromStr for JwtPayload {
     type Err = DecodeError;
-    
+
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         decode_jwt(s)
     }
@@ -76,7 +76,7 @@ impl FromStr for JwtPayload {
 
 impl TryFrom<&str> for JwtPayload {
     type Error = DecodeError;
-    
+
     fn try_from(value: &str) -> Result<Self, Self::Error> {
         decode_jwt(value)
     }
@@ -85,24 +85,24 @@ impl TryFrom<&str> for JwtPayload {
 /// Converts a value to multipart.
 pub fn value_to_multipart(value: Value) -> reqwest::multipart::Form {
     let mut form = reqwest::multipart::Form::new();
-    
+
     if let Value::Object(map) = value {
         for (key, value) in map {
             match value {
                 Value::Number(value) => {
                     form = form.text(key, value.to_string());
-                },
+                }
                 Value::Bool(value) => {
                     form = form.text(key, value.to_string());
-                },
+                }
                 Value::String(value) => {
                     form = form.text(key, value);
-                },
-                _ => {},
+                }
+                _ => {}
             };
         }
     }
-    
+
     form
 }
 
@@ -110,9 +110,9 @@ pub fn value_to_multipart(value: Value) -> reqwest::multipart::Form {
 pub fn generate_sessionid() -> String {
     // Should look like "37bf523a24034ec06c60ec61"
     (0..12)
-        .map(|_| { 
+        .map(|_| {
             let b = rand::random::<u8>();
-            
+
             format!("{b:02x?}")
         })
         .collect()
@@ -121,21 +121,24 @@ pub fn generate_sessionid() -> String {
 /// Creates API headers.
 pub fn create_api_headers() -> Result<HeaderMap, InvalidHeaderValue> {
     let mut headers = HeaderMap::new();
-    
-    headers.append(ACCEPT, HeaderValue::from_str("application/json, text/plain, */*")?);
+
+    headers.append(
+        ACCEPT,
+        HeaderValue::from_str("application/json, text/plain, */*")?,
+    );
     headers.append("sec-fetch-site", HeaderValue::from_str("cross-site")?);
     headers.append("sec-fetch-mode", HeaderValue::from_str("cors")?);
     headers.append("sec-fetch-dest", HeaderValue::from_str("empty")?);
-    
+
     Ok(headers)
 }
 
-/// Decodes a JWT for its payload. The string is seperated into three parts by periods. The first 
+/// Decodes a JWT for its payload. The string is seperated into three parts by periods. The first
 /// part is the header, the second part is the payload, and the third part is the signature.
-/// 
+///
 /// A JWT typically looks like the following: `xxxxx.yyyyy.zzzzz`
-/// 
-/// The header typically consists of two parts: the type of the token, which is JWT, and the 
+///
+/// The header typically consists of two parts: the type of the token, which is JWT, and the
 /// signing algorithm being used, such as HMAC SHA256 or RSA.
 ///
 /// For example:
@@ -145,11 +148,11 @@ pub fn create_api_headers() -> Result<HeaderMap, InvalidHeaderValue> {
 ///   "typ": "JWT"
 /// }
 /// ```
-/// 
-/// The second part of the token is the payload, which contains the claims. Claims are statements 
-/// about an entity (typically, the user) and additional data. There are three types of claims: 
+///
+/// The second part of the token is the payload, which contains the claims. Claims are statements
+/// about an entity (typically, the user) and additional data. There are three types of claims:
 /// registered, public, and private claims.
-/// 
+///
 /// Steam uses the following claims:
 /// ```json
 /// {
@@ -170,24 +173,24 @@ pub fn create_api_headers() -> Result<HeaderMap, InvalidHeaderValue> {
 ///   "ip_confirmer": "127.0.0.1"
 /// }
 /// ```
-/// 
+///
 /// See https://jwt.io/introduction for more information on JSON web tokens.
 fn decode_jwt(jwt: &str) -> Result<JwtPayload, DecodeError> {
     let mut parts = jwt.split('.');
-    
+
     parts.next().ok_or(DecodeError::InvalidJWT)?;
-    
+
     let part = parts.next().ok_or(DecodeError::InvalidJWT)?;
-    
+
     parts.next().ok_or(DecodeError::InvalidJWT)?;
-    
+
     if parts.next().is_some() {
         // invalid
         return Err(DecodeError::InvalidJWT);
     }
-    
+
     let mut standard_base64 = String::with_capacity(part.len());
-    
+
     for ch in part.chars() {
         match ch {
             '-' => standard_base64.push('+'),
@@ -195,40 +198,37 @@ fn decode_jwt(jwt: &str) -> Result<JwtPayload, DecodeError> {
             ch => standard_base64.push(ch),
         }
     }
-    
+
     // Decodes a base64 string to bytes.
     let decoded = general_purpose::STANDARD_NO_PAD.decode(standard_base64)?;
     let jwt = serde_json::from_slice::<JwtPayload>(&decoded)?;
-    
+
     Ok(jwt)
 }
 
 /// Generates a HMAC signature.
-pub fn generate_hmac_signature(
-    key: &[u8],
-    message: &[u8],
-) -> Result<Vec<u8>, DecodeError> {
+pub fn generate_hmac_signature(key: &[u8], message: &[u8]) -> Result<Vec<u8>, DecodeError> {
     let mut mac = HmacSha256::new_from_slice(key)?;
-    
+
     mac.update(message);
-    
+
     let result = mac.finalize();
     let bytes = result.into_bytes().to_vec();
-    
+
     Ok(bytes)
 }
 
 /// Decodes a base64 string to bytes.
 pub fn decode_base64(base64_str: &str) -> Result<Vec<u8>, DecodeError> {
     let decoded = general_purpose::STANDARD_NO_PAD.decode(base64_str)?;
-    
+
     Ok(decoded)
 }
 
 /// Encodes input to base64.
 pub fn encode_base64<I>(input: I) -> String
 where
-    I: AsRef<[u8]>
+    I: AsRef<[u8]>,
 {
     general_purpose::STANDARD_NO_PAD.encode(input)
 }
@@ -236,36 +236,85 @@ where
 /// Generates a spoofed hostname.
 pub fn get_spoofed_hostname() -> String {
     let mut hash = create_sha1(DEFAULT_USER_AGENT.as_bytes());
-    
+
     hash.truncate(7);
-    
+
     let mut output = String::from("DESKTOP-");
-    
+
     for n in hash {
         let index = n as usize % CHARS.len();
-        
+
         output.push(CHARS[index]);
     }
-    
+
     output
 }
 
 pub fn create_sha1(input: &[u8]) -> Vec<u8> {
     let mut hasher = Sha1::new();
-    
+
     hasher.update(input);
     hasher.finalize().to_vec()
+}
+
+/// Socks5 unified structure
+#[derive(Debug)]
+pub struct Socks5Proxy {
+    pub host: String,
+    pub port: u16,
+    pub username: Option<String>,
+    pub password: Option<String>,
+}
+
+impl Socks5Proxy {
+    pub fn from_str(url: &str) -> Result<Self, Socks5ParseError> {
+        let proxy = url::Url::from_str(url)?;
+        Ok(Self {
+            host: proxy
+                .host_str()
+                .ok_or(Socks5ParseError::InvalidHost)?
+                .to_string(),
+            port: proxy.port().ok_or(Socks5ParseError::InvalidPort)?,
+            username: if proxy.username().is_empty() {
+                None
+            } else {
+                Some(proxy.username().to_string())
+            },
+            password: proxy.password().map(|v| v.to_string()),
+        })
+    }
+
+    pub fn to_reqwest(&self) -> Result<reqwest::Client, reqwest::Error> {
+        let mut proxy = reqwest::Proxy::all(format!("socks5://{}:{}", self.host, self.port,))?;
+
+        if let (Some(username), Some(password)) = (&self.username, &self.password) {
+            proxy = proxy.basic_auth(username, password);
+        }
+
+        Ok(reqwest::Client::builder().proxy(proxy).build()?)
+    }
+}
+
+/// Represents a decode error.
+#[derive(Debug, thiserror::Error)]
+pub enum Socks5ParseError {
+    #[error("Invalid proxy URL: {}", .0)]
+    InvalidUrl(#[from] url::ParseError),
+    #[error("Failed to get proxy URL host")]
+    InvalidHost,
+    #[error("Failed to get proxy URL port")]
+    InvalidPort,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_decode_jwt() {
         let jwt = "eyAidHlwIjogIkpXVCIsICJhbGciOiAiRWREU0EiIH0.eyAiaXNzIjogInN0ZWFtIiwgInN1YiI6ICI3NjUwMDAwMDAwMDAwMDAwMCIsICJhdWQiOiBbICJ3ZWIiLCAicmVuZXciLCAiZGVyaXZlIiBdLCAiZXhwIjogMTcyMjQwMTE4OCwgIm5iZiI6IDE2OTUzNDY1NjAsICJpYXQiOiAxNzAzOTg2NTYwLCAianRpIjogIjBERDVfMjNBQkNFNDBfMjk2OUYiLCAib2F0IjogMTcwMzk4NjU2MCwgInBlciI6IDEsICJpcF9zdWJqZWN0IjogIjEyNy4wLjAuMSIsICJpcF9jb25maXJtZXIiOiAiMTI3LjAuMC4xIiB9.-fsYDOMqkVFveAAbvSCcED5NLpCbacbY6Mq9N1fev56QCh9f6PNaksqASI2dJORZFPLhZj37kK1UwfX53QYVDF";
         let decoded = decode_jwt(jwt).unwrap();
-        
+
         assert!(decoded.aud.iter().any(|a| a == "web"));
         assert_eq!(decoded.sub, SteamID::from(76500000000000000));
         assert_eq!(decoded.iss, "steam");
@@ -276,12 +325,12 @@ mod tests {
         assert_eq!(decoded.oat, 1703986560);
         assert_eq!(decoded.per, 1);
     }
-    
+
     #[test]
     fn test_bad_jwt() {
         let jwt = "Yup, this is a bad JWT. It's not even a JWT. It's just a string. It's not even base64 encoded.";
         let decoded = decode_jwt(jwt).unwrap_err();
-        
+
         assert!(matches!(decoded, DecodeError::InvalidJWT));
     }
 }
