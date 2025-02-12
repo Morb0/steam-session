@@ -30,6 +30,7 @@ use reqwest::header::SET_COOKIE;
 use serde::Deserialize;
 use serde_json::Value;
 use chrono::{Utc, Duration};
+use http::HeaderValue;
 use reqwest::{Client, RequestBuilder};
 use steam_session_proto::steammessages_auth_steamclient::CAuthentication_BeginAuthSessionViaCredentials_Response;
 use steamid_ng::SteamID;
@@ -579,7 +580,9 @@ where
             ]);
         }
         
-        let headers = create_api_headers()?;
+        let mut headers = create_api_headers()?;
+        headers.insert("Origin", HeaderValue::from_str("https://steamcommunity.com")?);
+        headers.insert("Referer", HeaderValue::from_str("https://steamcommunity.com/")?);
         let form = reqwest::multipart::Form::new()
             .text("nonce", refresh_token.clone())
             .text("sessionid", sessionid.clone())
