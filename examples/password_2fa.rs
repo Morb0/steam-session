@@ -20,7 +20,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let response = session.start_with_credentials(StartLoginSessionWithCredentialsDetails {
         account_name,
         password,
-        platform_type: EAuthTokenPlatformType::k_EAuthTokenPlatformType_WebBrowser,
+        platform_type: EAuthTokenPlatformType::k_EAuthTokenPlatformType_MobileApp,
         ..Default::default()
     }).await?;
     

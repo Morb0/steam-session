@@ -17,7 +17,7 @@ impl Default for StartLoginSessionWithCredentialsDetails {
         Self {
             account_name: String::new(),
             password: String::new(),
-            platform_type: EAuthTokenPlatformType::k_EAuthTokenPlatformType_WebBrowser,
+            platform_type: EAuthTokenPlatformType::k_EAuthTokenPlatformType_MobileApp,
             persistence: None,
             steam_guard_machine_token: None,
             steam_guard_code: None,

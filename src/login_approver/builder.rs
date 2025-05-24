@@ -33,7 +33,7 @@ impl LoginApproverBuilder {
         Self {
             access_token,
             shared_secret,
-            platform_type: EAuthTokenPlatformType::k_EAuthTokenPlatformType_WebBrowser,
+            platform_type: EAuthTokenPlatformType::k_EAuthTokenPlatformType_MobileApp,
             machine_id: None,
             user_agent: DEFAULT_USER_AGENT,
             client: Default::default(),
