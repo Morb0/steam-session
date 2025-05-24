@@ -54,7 +54,7 @@ pub struct LoginSession<T> {
 }
 
 pub async fn connect_ws() -> Result<LoginSession<WebSocketCMTransport>, LoginSessionError> {
-    let platform_type = EAuthTokenPlatformType::k_EAuthTokenPlatformType_WebBrowser;
+    let platform_type = EAuthTokenPlatformType::k_EAuthTokenPlatformType_MobileApp;
     let transport = WebSocketCMTransport::connect().await
         .map_err(AuthenticationClientError::WebSocketCM)?;
     
@@ -63,22 +63,10 @@ pub async fn connect_ws() -> Result<LoginSession<WebSocketCMTransport>, LoginSes
 }
 
 pub async fn connect_webapi() -> Result<LoginSession<WebApiTransport>, LoginSessionError> {
-    let platform_type = EAuthTokenPlatformType::k_EAuthTokenPlatformType_WebBrowser;
+    let platform_type = EAuthTokenPlatformType::k_EAuthTokenPlatformType_MobileApp;
     let transport = WebApiTransport::new();
     
     LoginSessionBuilder::new(transport, platform_type)
-        .build()
-}
-
-pub async fn connect_webapi_with_proxy(proxy_url: &str) -> Result<LoginSession<WebApiTransport>, LoginSessionError> {
-    let proxy = crate::helpers::Proxy::from_str(proxy_url)?;
-    let proxy_client = proxy.to_reqwest()?;
-
-    let platform_type = EAuthTokenPlatformType::k_EAuthTokenPlatformType_WebBrowser;
-    let transport = WebApiTransport::with_custom_client(proxy_client.clone());
-
-    LoginSessionBuilder::new(transport, platform_type)
-        .client(proxy_client)
         .build()
 }
 
