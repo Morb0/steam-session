@@ -71,7 +71,7 @@ pub async fn connect_webapi() -> Result<LoginSession<WebApiTransport>, LoginSess
 }
 
 pub async fn connect_webapi_with_proxy(proxy_url: &str) -> Result<LoginSession<WebApiTransport>, LoginSessionError> {
-    let proxy = crate::helpers::Socks5Proxy::from_str(proxy_url)?;
+    let proxy = crate::helpers::Proxy::from_str(proxy_url)?;
     let proxy_client = proxy.to_reqwest()?;
 
     let platform_type = EAuthTokenPlatformType::k_EAuthTokenPlatformType_WebBrowser;

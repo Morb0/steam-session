@@ -17,7 +17,7 @@ pub enum LoginSessionError {
     #[error("Decode error: {}", .0)]
     Decode(#[from] crate::helpers::DecodeError),
     #[error("Proxy decode error: {}", .0)]
-    ProxyDecode(#[from] crate::helpers::Socks5ParseError),
+    ProxyDecode(#[from] crate::helpers::ProxyParseError),
     #[error("The provided token is a refresh token, not an access token")]
     ExpectedAccessToken,
     #[error("The provided token is an access token, not a refresh token")]

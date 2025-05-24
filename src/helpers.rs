@@ -1,3 +1,4 @@
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 use base64::{engine::general_purpose, Engine as _};
@@ -257,35 +258,61 @@ pub fn create_sha1(input: &[u8]) -> Vec<u8> {
     hasher.finalize().to_vec()
 }
 
-/// Socks5 unified structure
+/// Unified proxy structure
 #[derive(Debug)]
-pub struct Socks5Proxy {
-    pub host: String,
-    pub port: u16,
-    pub username: Option<String>,
-    pub password: Option<String>,
+pub struct Proxy {
+    schema: String,
+    host: String,
+    port: u16,
+    username: Option<String>,
+    password: Option<String>,
 }
 
-impl Socks5Proxy {
-    pub fn from_str(url: &str) -> Result<Self, Socks5ParseError> {
-        let proxy = url::Url::from_str(url)?;
+impl Proxy {
+    pub fn from_str(url: &str) -> Result<Self, ProxyParseError> {
+        let proxy = url::Url::parse(url)?;
+        
+        let schema = proxy.scheme().to_string();
+        let host = proxy
+            .host_str()
+            .ok_or(ProxyParseError::InvalidHost)?
+            .to_string();
+        let port = proxy.port().ok_or(ProxyParseError::InvalidPort)?;
+
+        let username = if proxy.username().is_empty() {
+            None
+        } else {
+            Some(proxy.username().to_string())
+        };
+        let password = proxy.password().map(|v| v.to_string());
+
         Ok(Self {
-            host: proxy
-                .host_str()
-                .ok_or(Socks5ParseError::InvalidHost)?
-                .to_string(),
-            port: proxy.port().ok_or(Socks5ParseError::InvalidPort)?,
-            username: if proxy.username().is_empty() {
-                None
-            } else {
-                Some(proxy.username().to_string())
-            },
-            password: proxy.password().map(|v| v.to_string()),
+            schema,
+            host,
+            port,
+            username,
+            password,
         })
     }
 
+    pub fn to_addr(&self) -> String {
+        format!("{}:{}", self.host, self.port)
+    }
+
+    pub fn to_basic_auth(&self) -> Option<String> {
+        let (Some(user), Some(pass)) = (&self.username, &self.password) else {
+            return None;
+        };
+
+        use base64::prelude::*;
+        let credentials = format!("{}:{}", user, pass);
+        let encoded = BASE64_STANDARD.encode(credentials.as_bytes());
+        Some(encoded)
+    }
+
     pub fn to_reqwest(&self) -> Result<reqwest::Client, reqwest::Error> {
-        let mut proxy = reqwest::Proxy::all(format!("socks5://{}:{}", self.host, self.port,))?;
+        let mut proxy =
+            reqwest::Proxy::all(format!("{}://{}:{}", self.schema, self.host, self.port))?;
 
         if let (Some(username), Some(password)) = (&self.username, &self.password) {
             proxy = proxy.basic_auth(username, password);
@@ -295,9 +322,22 @@ impl Socks5Proxy {
     }
 }
 
-/// Represents a decode error.
+impl Display for Proxy {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        if let (Some(username), Some(password)) = (&self.username, &self.password) {
+            write!(
+                f,
+                "{}://{}:{}@{}:{}",
+                self.schema, username, password, self.host, self.port
+            )
+        } else {
+            write!(f, "{}://{}:{}", self.schema, self.host, self.port)
+        }
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
-pub enum Socks5ParseError {
+pub enum ProxyParseError {
     #[error("Invalid proxy URL: {}", .0)]
     InvalidUrl(#[from] url::ParseError),
     #[error("Failed to get proxy URL host")]
